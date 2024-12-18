@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fragaria - Dashboard{% endblock %}</title>
+    <!-- Si se utilizarán iconos, puedes cargar una librería de iconos como Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header>
+        <h1>{% block header %}Bienvenido, {{ user.username }}!{% endblock %}</h1>
+        <nav>
+            <ul>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}
+        
+        <!-- Panel de Información del Usuario -->
+        <section>
+            <h2>Información de tu cuenta</h2>
+            <p>Nombre de usuario: {{ user.username }}</p>
+            <p>Proyectos de cultivo activos: {{ proyectos_activos_count }}</p> <!-- Esta variable debe ser pasada desde la vista -->
+        </section>
+
+        <!-- Notificaciones -->
+        <section>
+            <h2>Notificaciones</h2>
+            <ul>
+                <li>Tu cultivo de fresa está listo para la cosecha.</li>
+                <li>El riego de tu invernadero está programado para mañana.</li>
+                <li>¡Hay nuevos consejos sobre el cultivo de fresas en tu sección de ayuda!</li>
+            </ul>
+        </section>
+
+        <!-- Estadísticas Básicas -->
+        <section>
+            <h2>Estadísticas del Cultivo</h2>
+            <p>Cultivos en crecimiento: {{ cultivos_en_crecimiento }}</p> <!-- Estas variables también deben ser pasadas desde la vista -->
+            <p>Cultivos cosechados este mes: {{ cultivos_cosechados_mes }}</p>
+            <p>Riego programado para hoy: {{ riego_programado }}</p>
+        </section>
+
+        <!-- Gráfico de Cultivos (Ejemplo de Chart.js) -->
+        <section>
+            <h2>Progreso de los Cultivos</h2>
+            <canvas id="graficoCultivo" width="400" height="200"></canvas>
+            <script>
+                var ctx = document.getElementById('graficoCultivo').getContext('2d');
+                var myChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'],
+                        datasets: [{
+                            label: 'Crecimiento de la fresa (cm)',
+                            data: [5, 10, 15, 20],  // Datos de ejemplo, deberías pasarlos dinámicamente desde la vista
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    }
+                });
+            </script>
+        </section>
+
+        <!-- Últimas Actividades -->
+        <section>
+            <h2>Últimas Actividades</h2>
+            <ul>
+                <li>Riego programado para el cultivo de fresa: {{ fecha_riego }}</li>
+                <li>Nuevo cultivo añadido: {{ nuevo_cultivo_nombre }}</li>
+                <li>El riego de la semana pasada fue exitoso.</li>
+            </ul>
+        </section>
+
+        <!-- Enlaces Rápidos -->
+        <section>
+            <h2>Accesos Rápidos</h2>
+            <ul>
+            </ul>
+        </section>
+
+        {% endblock %}
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Fragaria - Sistema de monitoreo de cultivo de fresas</p>
+    </footer>
+
+    <!-- Script para Chart.js (si usas gráficos) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</body>
+</html>

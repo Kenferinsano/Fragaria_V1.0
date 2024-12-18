@@ -1,0 +1,10 @@
+<h1>Eliminar Usuario</h1>
+<p>¿Estás seguro de que deseas eliminar al usuario {{ usuario.first_name }} {{ usuario.last_name }}?</p>
+<p><strong>Correo:</strong> {{ usuario.email }}</p>
+
+<form method="POST">
+    {% csrf_token %}
+    <button type="submit" style="color: red;">Eliminar Usuario</button>
+</form>
+
+<a href="{% url 'gestion_usuarios' %}">Cancelar</a>

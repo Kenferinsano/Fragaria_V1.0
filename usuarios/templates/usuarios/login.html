@@ -1,0 +1,11 @@
+<h1>Login</h1>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}  <!-- Aquí se renderiza el formulario -->
+    <button type="submit">Iniciar sesión</button>
+</form>
+
+<!-- Enlace para recuperar la contraseña -->
+<a href="{% url 'password_reset' %}">¿Olvidaste tu contraseña?</a>
+<p>¿No tienes una cuenta?</p><a href="{% url 'registro' %}">Registrate</a>
