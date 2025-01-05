@@ -32,6 +32,7 @@ urlpatterns = [
 
     
     #Gestión de usuarios (solo para administradores)
+    path('dashboard-admin/', views.dashboard_admin, name='dashboard_admin'),
     path('gestion-usuarios/', views.gestion_usuarios, name='gestion_usuarios'),
     path('agregar-usuario/', views.agregar_usuario, name='agregar_usuario'),
     path('editar-usuario/<int:user_id>/', views.editar_usuario, name='editar_usuario'),
@@ -42,4 +43,15 @@ urlpatterns = [
     path('password-reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='usuarios/password_reset_done.html'), name='password_reset_done'),
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='usuarios/password_reset_confirm.html'), name='password_reset_confirm'),
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='usuarios/password_reset_complete.html'), name='password_reset_complete'),
+
+    #Actividades de fragaria :D
+    path('siembra/', views.seleccion_siembra, name='siembra'),
+    path('plantacion/', views.plantacion, name='plantacion'),  # Mostrar las plantaciones
+    path('registrar-plantacion/', views.registrar_plantacion, name='registrar_plantacion'),  # Formulario de registro de plantación
+    path('registrar-actividad/', views.registrar_actividad, name='registrar_actividad'),
+    path('actividades/', views.lista_actividades, name='lista_actividades'),
+    path('actividades/<int:actividad_id>/registrar-estado/', views.registrar_estado_actividad, name='registrar_estado_actividad'),
+    #HACE FALTA CREAR LA UR Y PLANTILLA HTML DE CRONOGRAMA.
 ]
+
+

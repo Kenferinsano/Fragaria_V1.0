@@ -4,6 +4,10 @@ from .models import Usuario
 from django.contrib.auth.forms import UserChangeForm
 from django.contrib.auth.forms import SetPasswordForm
 from django import forms
+from .models import Plantacion
+from .models import Usuario  # Importa Usuario correctamente
+from .models import Actividad, EstadoActividad
+
 
 #Registro de formulario donde incluyen los datos de validacion para un registro cono nombre, apellido, correo, contraseñas etc..
 
@@ -48,4 +52,17 @@ class UsuarioForm(UserChangeForm):
             return password
         return None
 
+class PlantacionForm(forms.ModelForm):
+    class Meta:
+        model = Plantacion
+        fields = ['nombre', 'fecha_siembra', 'descripcion']
+        
+class ActividadForm(forms.ModelForm):
+    class Meta:
+        model = Actividad
+        fields = ['nombre_actividad', 'tiempo_estimado', 'clima_requerido', 'fecha_vencimiento', 'fecha']
 
+class EstadoActividadForm(forms.ModelForm):
+    class Meta:
+        model = EstadoActividad
+        fields = ['estado', 'actividad']

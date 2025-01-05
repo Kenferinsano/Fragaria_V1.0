@@ -1,0 +1,17 @@
+{% extends 'usuarios/base.html' %}
+
+{% block title %}Mis Plantaciones{% endblock %}
+
+{% block content %}
+    <h2>Mis Plantaciones</h2>
+    
+    {% if plantacion %}
+        <ul>
+            {% for plantacion in plantacion %}
+                <li>{{ plantacion.nombre }} - {{ plantacion.fecha_creacion }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No tienes plantaciones registradas.</p>
+    {% endif %}
+{% endblock %}

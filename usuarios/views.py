@@ -14,12 +14,28 @@ from django.contrib.auth import get_user_model
 from .forms import UsuarioForm  
 from django.http import HttpResponseForbidden
 from .models import Usuario
+import requests
+from django.shortcuts import render
+from django.http import JsonResponse
+from datetime import datetime
+from .models import Plantacion, Siembra
+from .forms import PlantacionForm
+from .models import Usuario, FechasSiembra
+from django.shortcuts import render, redirect
+from .models import Actividad, EstadoActividad
+from .forms import ActividadForm, EstadoActividadForm
+
 
 
 def inicio(request):
     return render(request, 'usuarios/base.html')  # Plantilla de dashboard principal
 
 #Funcion que valida el tipo de ingreso como credenciales dependiendo el acceso
+
+def mi_vista(request):
+    # Después de alguna acción, como guardar un formulario
+    messages.success(request, "¡Operación completada correctamente!")
+    return redirect('nombre_de_la_url')
 
 def iniciar_sesion(request):
     if request.method == 'POST':
@@ -34,9 +50,9 @@ def iniciar_sesion(request):
             if user is not None:
                 login(request, user)
                 if user.is_superuser:
-                    return redirect('/admin/')  # Redirigir al admin
+                    return redirect('dashboard_admin')  # Cambiar aquí la redirección
                 else:
-                    return redirect('home')  # Redirigir a página principal de usuario normal
+                    return redirect('inicio')  # Redirigir a página principal de usuario normal
             else:
                 messages.error(request, 'Datos incorrectos')
                 return render(request, 'usuarios/login.html', {'form': form})
@@ -44,6 +60,23 @@ def iniciar_sesion(request):
         form = LoginForm()
 
     return render(request, 'usuarios/login.html', {'form': form})
+
+@login_required
+def dashboard_admin(request):
+    if not request.user.is_superuser:
+        return HttpResponseForbidden("No tienes permiso para acceder a esta página.")
+
+    usuarios = Usuario.objects.all()
+    total_usuarios = usuarios.count()
+    total_proyectos = 5  # Ejemplo, reemplaza con lógica real
+
+    context = {
+        'user': request.user,
+        'usuarios': usuarios,
+        'total_usuarios': total_usuarios,
+        'total_proyectos': total_proyectos,
+    }
+    return render(request, 'usuarios/dashboard_admin.html', context)
 
 #Se verifica si el login cuenta con credenciales creadas mediante superUser, si es el caso, se valida y tiene acceso a los empleados 
 
@@ -128,12 +161,27 @@ def eliminar_usuario(request, user_id):
     usuario = get_object_or_404(Usuario, id=user_id)
 
     if request.method == 'POST':
-        usuario.delete()
-        messages.success(request, "Usuario eliminado exitosamente.")
-        return redirect('gestion_usuarios')  # Redirigir al panel de administración
+        try:
+            # Eliminar las relaciones de ManyToMany y otras claves foráneas si es necesario
+            usuario.actividades.clear()  # Elimina las relaciones de ManyToMany
+            usuario.plantacion = None  # Si tienes una relación ForeignKey
+
+            # Eliminar relaciones relacionadas en otras tablas
+            # Asegúrate de eliminar explícitamente las relaciones en la tabla `usuarios_fechasiembra`
+            FechasSiembra.objects.filter(usuario=usuario).delete()
+
+            # Ahora, proceder a eliminar el usuario
+            usuario.delete()
+
+            # Mostrar mensaje de éxito
+            messages.success(request, f"El usuario {usuario.first_name} {usuario.last_name} ha sido eliminado exitosamente.")
+        except Exception as e:
+            # En caso de error al eliminar
+            messages.error(request, f"Ocurrió un error al eliminar el usuario: {e}")
+
+        return redirect('gestion_usuarios')  # Cambia 'gestion_usuarios' al nombre de la vista correcta
 
     return render(request, 'usuarios/eliminar_usuario.html', {'usuario': usuario})
-
 
 #Vista que permite el registro para nuevos empleados u usuarios de la app
 
@@ -220,3 +268,164 @@ def reset_password(request, uidb64, token):
     except (TypeError, ValueError, OverflowError, user.DoesNotExist):
         messages.error(request, 'El enlace de restablecimiento de contraseña no es válido o ha expirado.')
         return redirect('password_reset')
+
+# Función para obtener las fechas de siembra recomendadas desde una API
+
+def obtener_clima(ubicacion):
+    api_key = 'b38f3f8558d7bee2759f548984ae5505'  # Reemplaza con tu clave API
+    url = f'https://api.openweathermap.org/data/2.5/weather?q={ubicacion}&appid={api_key}&units=metric'
+
+    # Diccionario de traducciones del clima
+    CLIMA_TRADUCCIONES = {
+        "Clear": "Despejado",
+        "Clouds": "Nublado",
+        "Rain": "Lluvia",
+        "Drizzle": "Llovizna",
+        "Thunderstorm": "Tormenta",
+        "Snow": "Nieve",
+        "Mist": "Neblina",
+        "Smoke": "Humo",
+        "Haze": "Bruma",
+        "Dust": "Polvo",
+        "Fog": "Niebla",
+        "Sand": "Arena",
+        "Ash": "Ceniza",
+        "Squall": "Chubasco",
+        "Tornado": "Tornado",
+        "light rain": "llovizna",
+        "moderate rain": "lluvia moderada",
+        "heavy intensity rain": "lluvia intensa",
+        "very heavy rain": "lluvia muy intensa",
+        "extreme rain": "lluvia extrema",
+        "freezing rain": "lluvia helada",
+        "thunderstorm": "tormenta",
+        "snow": "nieve",
+        "mist": "neblina",
+        "drizzle": "llovizna",
+        "overcast clouds": "nubes cubiertas",
+        "scattered clouds": "nubes dispersas",
+        "broken clouds": "nubes rotas",
+        "few clouds": "pocas nubes"
+    }
+
+    try:
+        response = requests.get(url)
+        response.raise_for_status()  # Lanza una excepción si hay un error en la respuesta
+        data = response.json()  # Convierte la respuesta a JSON
+
+        # Verificar que los datos esperados están en la respuesta
+        if "main" in data and "weather" in data:
+            # Extraer la información necesaria
+            temperatura = data['main']['temp']
+            descripcion_ingles = data['weather'][0]['description']
+            # Traducir la descripción al español
+            descripcion = CLIMA_TRADUCCIONES.get(descripcion_ingles, descripcion_ingles)  # Fallback en caso de que no se encuentre
+            humedad = data['main']['humidity']
+            presion = data['main']['pressure']
+            velocidad_viento = data['wind']['speed']
+            return {
+                'temperatura': temperatura,
+                'descripcion': descripcion,
+                'humedad': humedad,
+                'presion': presion,
+                'velocidad_viento': velocidad_viento
+            }
+        else:
+            print("La respuesta no contiene los datos esperados:", data)
+            return None
+    except requests.exceptions.RequestException as e:
+        print(f"Error al obtener datos del clima: {e}")
+        return None
+
+def seleccion_siembra(request):
+    # Lista de fechas recomendadas
+    fechas_recomendadas = [
+        "2024-01-15",
+        "2024-02-20",
+        "2024-03-10",
+        "2024-04-05",
+        "2024-05-12",
+    ]
+
+    ubicacion = 'Pereira'  # Cambia esto por la ciudad deseada
+    clima_data = obtener_clima(ubicacion)
+
+    if clima_data:
+        temperatura = clima_data['temperatura']
+        descripcion = clima_data['descripcion']
+        humedad = clima_data['humedad']
+        presion = clima_data['presion']
+        velocidad_viento = clima_data['velocidad_viento']
+    else:
+        temperatura = descripcion = humedad = presion = velocidad_viento = None
+
+    return render(request, 'usuarios/siembra.html', {
+        'fechas_recomendadas': fechas_recomendadas,
+        'temperatura': temperatura,
+        'descripcion': descripcion,
+        'humedad': humedad,
+        'presion': presion,
+        'velocidad_viento': velocidad_viento,
+        'ubicacion': ubicacion,
+    })
+
+# Vista para mostrar todas las plantaciones
+@login_required
+def plantacion(request):
+    plantaciones = Plantacion.objects.all()  # Obtener todas las plantaciones
+    return render(request, 'usuarios/plantacion.html', {'plantaciones': plantaciones})
+
+# Vista para registrar una nueva plantación
+@login_required
+def registrar_plantacion(request):
+    if request.method == 'POST':
+        form = PlantacionForm(request.POST)  # Obtener datos del formulario
+        if form.is_valid():
+            # Guardar la nueva plantación, asociando al usuario logueado si es necesario
+            plantacion = form.save(commit=False)
+            plantacion.usuario = request.user  # Si tu modelo Plantacion tiene un campo 'usuario'
+            plantacion.save()
+            messages.success(request, 'Plantación registrada correctamente.')
+            return redirect('plantacion')  # Redirige a la vista que muestra las plantaciones
+    else:
+        form = PlantacionForm()
+
+    # Si la solicitud es GET, muestra el formulario vacío
+    return render(request, 'usuarios/registrar_plantacion.html', {'form': form})
+
+
+
+# Vista para registrar una actividad
+def registrar_actividad(request):
+    if request.method == 'POST':
+        form = ActividadForm(request.POST)
+        if form.is_valid():
+            actividad = form.save()  # Guarda la actividad
+            # Crear el estado de la actividad como "Pendiente"
+            estado = EstadoActividad(estado="Pendiente", actividad=actividad)
+            estado.save()
+            return redirect('lista_actividades')  # Redirige a la lista de actividades o cualquier otra vista
+    else:
+        form = ActividadForm()
+    
+    return render(request, 'registrar_actividad.html', {'form': form})
+
+# Vista para listar todas las actividades
+def lista_actividades(request):
+    actividades = Actividad.objects.all()  # Obtén todas las actividades
+    return render(request, 'usuarios/lista_actividades.html', {'actividades': actividades})
+
+# Vista para registrar el estado de una actividad
+def registrar_estado_actividad(request, actividad_id):
+    actividad = Actividad.objects.get(id=actividad_id)  # Obtiene la actividad por ID
+    if request.method == 'POST':
+        form = EstadoActividadForm(request.POST)
+        if form.is_valid():
+            estado = form.save(commit=False)
+            estado.actividad = actividad  # Relaciona el estado con la actividad
+            estado.save()
+            return redirect('lista_actividades')  # Redirige a la lista de actividades
+    else:
+        form = EstadoActividadForm()
+
+    return render(request, 'actividades/registrar_estado_actividad.html', {'form': form, 'actividad': actividad})

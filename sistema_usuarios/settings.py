@@ -59,8 +59,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'usuarios/templates')],  # Asegúrate de que apunte correctamente
-        'APP_DIRS': True,
+        'DIRS': [],  # Si estás usando plantillas globales en una carpeta común
+        'APP_DIRS': True,  # Esto permite buscar plantillas dentro de las aplicaciones
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -71,6 +71,7 @@ TEMPLATES = [
         },
     },
 ]
+
 
 
 AUTH_USER_MODEL = 'usuarios.Usuario'
@@ -148,3 +149,6 @@ EMAIL_HOST_USER = 'canomoreno78@gmail.com'  # Tu correo de Gmail
 EMAIL_HOST_PASSWORD = 'ucou mhjv hzkq wgwf'  # Tu contraseña o contraseña de aplicación     #ucou mhjv hzkq wgwf   contraseña de google
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER  # Correo desde el cual se enviarán los emails
 
+CSRF_COOKIE_SECURE = False  # Solo usa True si estás trabajando con HTTPS
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = 'Lax'  # O 'Strict' para mayor seguridad

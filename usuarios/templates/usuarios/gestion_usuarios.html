@@ -8,11 +8,15 @@
 <body>
     <header>
         <h1>Gestión de Usuarios</h1>
-        <a href="{% url 'inicio' %}">Volver al inicio</a>
     </header>
 
     <main>
-        <table>
+        <!-- Botón de agregar usuario -->
+        <div>
+            <a href="{% url 'agregar_usuario' %}">Agregar Usuario</a>
+        </div>
+
+        <table border="1">
             <thead>
                 <tr>
                     <th>Nombre</th>
